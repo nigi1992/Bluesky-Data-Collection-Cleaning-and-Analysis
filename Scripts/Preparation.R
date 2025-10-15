@@ -34,11 +34,12 @@ library("usethis")
 
 # 1. Open an account on the website
 
-# nigi.wasi@hotmail.com
+
 # password: A5S4xSv!HUzj&2
 # App Password: 6xk5-7cgp-kny5-f4ms
 # api-muncher.bsky.social
 # @api-muncher.bsky.social
+
 
 # 2. Generate a password — this is used instead of your normal password to authenticate secure access to the API.
 
