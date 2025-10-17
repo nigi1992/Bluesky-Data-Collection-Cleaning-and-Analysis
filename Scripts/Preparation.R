@@ -17,6 +17,22 @@ library("topicmodels")
 library("usethis")
 
 
+# Loading .rds data packages
+
+# add
+embeds_add <- readRDS("data/add/embeds_add.rds")
+posts_add <- readRDS("data/add/posts_add.rds")
+profiles_add <- readRDS("data/add/profiles_add.rds")
+
+# raw
+feeds <- readRDS("data/raw/feeds.rds")
+follows <- readRDS("data/raw/follows.rds")
+posts_get <- readRDS("data/raw/posts_get.rds")
+posts_search <- readRDS("data/raw/posts_search.rds")
+profiles_get <- readRDS("data/raw/profiles_get.rds")
+profiles_search <- readRDS("data/raw/profiles_search.rds")
+
+
 # Ollama Model Download ---------------------------------------------------
 
 # To pull the model, open the Terminal tab in RStudio tab in RStudio (normally found next to the Console tab),
