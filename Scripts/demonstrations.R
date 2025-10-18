@@ -1,6 +1,5 @@
-# this file is intentionally left blank
-# it will be used for live coding during the seminar
 
+## Data Collection
 
 # Day 1 -------------------------------------------------------------------
 
@@ -447,6 +446,14 @@ setdiff(names(eco_post_likes), names(eco_post_quotes))
 setdiff(names(eco_post_reposts), names(eco_post_quotes))
 
 
+
+the_uri <- "at://did:plc:rcgrkfgh55jxcbsejzkzexv7/app.bsky.feed.post/3m3fbxto3jk22"
+
+e11_1 <- bs_get_post_likes(uri = "at://did:plc:rcgrkfgh55jxcbsejzkzexv7/app.bsky.feed.post/3m3fbxto3jk22")
+e11_2 <- bs_get_reposts(the_uri)
+e11_3 <- bs_get_quotes(the_uri)
+
+
 ## Ex. 12 Collect new data for the posts from Exercise 3
 #using the bs_get_record() function
 #compare this output with previous methods:
@@ -464,6 +471,11 @@ get_record_economy <- bs_loop(
 setdiff(names(economy_posts), names(get_record_economy))
 setdiff(names(get_posts_economy), names(get_record_economy))
 
+e12 <- bs_loop(
+  data = e3_econ,
+  var = uri,
+  func = bs_get_record
+)
 
 ## Get Record
 
@@ -493,7 +505,371 @@ get_record_relationships <- bs_loop(
   data = Relationship_list,
   var = following,
   func = bs_get_record,
-  add_var = TRUE
-)
+  limit = 10)
 
 setdiff(names(Relationship_list), names(get_record_relationships))
+
+e13 <- bs_loop(
+  data = e9,
+  var = following,
+  func = bs_get_record,
+  limit = 10
+)
+
+e13_alt <- bs_get_record(repo = "at://did:plc:e2alvfh67skz7iov5yevptwt/app.bsky.graph.follow/3k7tfdrep7j23")
+
+
+## End of Data Collection Script
+
+# Day 2 -------------------------------------------------------------------
+
+## Data Cleaning
+
+library(tidyr)
+library(dplyr)
+  
+df <- bs_search_posts("lucerne") %>%  
+  unnest_wider(col = record, 
+                names_sep = "_")
+
+df_hoist <- bs_search_posts(query = "lucerne") %>%
+  hoist(record, post = "text")
+
+df_embed <- bs_search_posts(query = "political science") %>%
+  bs_clean_embed()
+
+
+## Ex. 14
+
+e14 <- readRDS("data/raw/posts_search.rds") %>%
+   unnest_wider(col = author, names_sep = "_") %>%
+   hoist(record, text = "text", createdAt = "createdAt")
+
+e14_hoist <- readRDS("data/raw/posts_search.rds") %>%
+  hoist(author, handle = "handle", displayName = "displayName")  
+
+  
+## Ex. 15
+
+e15 <- readRDS("data/raw/posts_get.rds") %>%
+  bs_clean_embed()
+
+saveRDS(object = e15, "data/raw/posts_get.rds")
+
+
+## Cleaning | Strings | Overview
+
+## Bsky Team
+# regex to match profile mentions
+mention_bluesky <- "(^|\\s|\\()@([a-zA-Z0-9.-]+)\\b"
+
+# regex to match tags
+tag_bluesky <- "(^|\\s)[#＃]((?!\\ufe0f)[^\\s\\u00AD\\u2060\\u200A\\u200B\\u200C\\u200D\\u20e2]*[^\\d\\s\\p{P}\\u00AD\\u2060\\u200A\\u200B\\u200C\\u200D\\u20e2]+[^\\s\\u00AD\\u2060\\u200A\\u200B\\u200C\\u200D\\u20e2]*)?"
+
+# regex to match URLs
+url_bluesky <- "(^|\\s|\\()((https?://\\S+)|(([a-z][a-z0-9]*(\\.[a-z0-9]+)+)\\S*))"
+
+## bskyr package
+# regex to match profile mentions
+mention_bskyr <- "[$|\\W](@([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)"
+
+# regex to match tags
+tag_bskyr <- "(^|\\s)[#\\uFF03](?<tag>(?!\\ufe0f)[^\\s\\u00AD\\u2060\\u200A\\u200B\\u200C\\u200D\\u20e2]*[^\\d\\s\\p{P}\\u00AD\\u2060\\u200A\\u200B\\u200C\\u200D\\u20e2]+[^\\s\\u00AD\\u2060\\u200A\\u200B\\u200C\\u200D\\u20e2]*)?"
+
+# regex to match URLs
+url_bskyr <- "(^|[$|\\W])(https?://(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*[-a-zA-Z0-9@%_\\+~#//=])?)"
+
+
+## other regex patterns
+# regex to match emojis
+emoji_regex <- ":[a-zA-Z0-9_]+:"
+
+# regex to match line breaks
+linebreak_regex <- "\\r\\n|\\n|\\r"
+
+# regex to match punctuation
+punctuation_regex <- "[[:punct:]]"
+
+# regex to match numbers
+number_regex <-"\\b[+-]?(?:\\d*\\.\\d+|\\d+)\\b"
+
+## Detect
+str_detect(
+  string,
+  pattern,
+)
+
+# example
+post <- "These from @handle1.bsky.social are #socool. 👏 A #mustsee on @handle2.com!
+          👉 https://handle2.com/aq7MJJ2..."
+str_detect(string = post, pattern = url_bluesky)
+
+## Count
+str_count(
+  string,
+  pattern,
+)
+
+# example
+post <- "These from @handle1.bsky.social are #socool. 👏 A #mustsee on @handle2.com!
+          👉 https://handle2.com/aq7MJJ2..."
+str_count(string = post, pattern = mention_bluesky)
+
+
+## Extract
+
+str_extract(
+  string,
+  pattern,
+)
+
+str_extract_all(
+  string,
+  pattern,
+)
+
+# example
+post <- "These from @handle1.bsky.social are #socool. 👏 A #mustsee on @handle2.com!
+          👉 https://handle2.com/aq7MJJ2..."
+str_extract_all(string = post, pattern = url_bluesky)
+
+## Remove
+str_remove(
+  string,
+  pattern,
+)
+
+str_remove_all(
+  string,
+  pattern,
+)
+
+# example
+post <- "These from @handle1.bsky.social are #socool. 👏 A #mustsee on @handle2.com!
+          👉 https://handle2.com/aq7MJJ2..."
+str_remove(string = post, pattern = mention_bluesky)
+
+
+## Replace
+str_replace(
+  string,
+  pattern,
+  replacement,
+)
+
+str_replace_all(
+  string,
+  pattern,
+  replacement,
+)
+
+# example
+post <- "These from @handle1.bsky.social are #socool. 👏 A #mustsee on @handle2.com!
+          👉 https://handle2.com/aq7MJJ2..."
+str_replace(string = post, pattern = mention_bluesky, replacement = "[MENTION]")
+
+
+## Squish
+str_squish(
+  string,
+)
+# example
+post <- "These from @handle1.bsky.social are #socool. 👏 A #mustsee on @handle2.com!
+          👉 https://handle2.com/aq7MJJ2..."
+str_squish(string = post)
+
+
+## Ex. 16
+
+e16 <- e14 %>%
+  mutate(
+    text_clean = text %>%
+      str_remove_all(pattern = mention_bluesky) %>%
+      str_remove_all(pattern = url_bluesky) %>%
+      str_remove_all(pattern = tag_bluesky) %>%
+      str_squish() # remove extra white spaces
+  )
+
+e16$text_clean[1:10]
+
+
+## Change lower case
+str_to_lower(
+  string,
+  locale = "en"
+)
+
+
+## Ex. 17
+e17 <- e16 %>%
+  mutate(
+    text_low = str_to_lower(text)) %>%
+    filter(str_detect(text_low, "political science|economics|sociology")) %>%
+    mutate(n_matches = str_count(text_low, "economics|political science|sociology")) %>%
+    filter(n_matches >= 1) %>%
+    mutate(topic = case_when(
+      str_detect(text_low, "economics") ~ "econ",
+      str_detect(text_low, "political science") ~ "pols",
+      str_detect(text_low, "sociology") ~ "soc")
+    ) %>%
+  # drop temp variables
+  select(-text_low, -n_matches)
+
+
+e17$text_clean_lower[1:10]
+
+
+## Ex. 18
+e18 <- readRDS("data/raw/profiles_get.rds") %>%
+  mutate(
+    desc_low = str_to_lower(description)) %>%
+  filter(str_detect(desc_low, "political science|economics|sociology")) %>%
+  mutate(n_matches = str_count(desc_low, "economics|political science|sociology")) %>%
+  filter(n_matches >= 1) %>%
+  mutate(topic = case_when(
+    str_detect(desc_low, "economics") ~ "econ",
+    str_detect(desc_low, "political science") ~ "pols",
+    str_detect(desc_low, "sociology") ~ "soc")
+  ) %>%
+  # drop temp variables
+  select(-desc_low, -n_matches)
+e18$description[1:10]  
+
+
+## Ex. 19
+
+e19 <- e17 %>%
+  mutate(
+    createdAt = as.Date(createdAt),
+    indexed_at = as.Date(indexed_at),
+    author_createdAt = as.Date(author_createdAt),
+    reply_count = as.numeric(reply_count),
+    repost_count = as.numeric(repost_count),
+    like_count = as.numeric(like_count),
+    quote_count = as.numeric(quote_count)
+  )
+glimpse(e19)  
+saveRDS(object = e19, file = "data/raw/posts.rds.rds")
+
+## Ex. 20
+
+e20 <- e18 %>%
+  mutate(
+    created_at = as.Date(created_at),
+    indexed_at = as.Date(indexed_at),
+    followers_count = as.numeric(followers_count),
+    follows_count = as.numeric(follows_count),
+    posts_count = as.numeric(posts_count)
+  )
+glimpse(e20)
+saveRDS(object = e20, file = "data/raw/profiles.rds")
+
+
+## Ex. 21
+
+feeds <- readRDS("data/raw/feeds.rds")
+
+e21 <- feeds %>%
+  select(from_profile = profile_did, to_profile = author_did) %>%
+  filter(from_profile != to_profile) %>%
+  filter(to_profile %in% feeds$profile_did) %>%
+  group_by(from_profile, to_profile) %>% # aggregate
+  summarise(repost_count = n(), .groups = "drop")
+head(e21)
+saveRDS(object = e21, file = "data/raw/reposts.rds")
+
+## Ex. 22
+
+follows <- readRDS("data/raw/follows.rds")
+#rm(e22)
+e22 <- follows %>%
+  select(from_profile = did, to_profile = subject_did) %>%
+  filter(from_profile != to_profile) %>%
+  filter(to_profile %in% follows$subject_did)
+head(e22)
+saveRDS(object = e22, file = "data/raw/followers.rds")
+
+
+## Ex. 23
+
+e23 <- e19 %>%
+  unnest_tokens(output = word, input = text_clean, token = "words", drop = FALSE) %>%
+  anti_join(stop_words, by = "word")
+head(e23)
+saveRDS(object = e23, file = "data/raw/posts_words.rds")
+
+
+## End of Cleaning Script
+
+
+# Day 3 -------------------------------------------------------------------
+
+## Data Analysis
+
+profiles <- readRDS("data/raw/profiles.rds")
+
+ggplot(data = profiles, aes(x = created_at)) +
+  geom_density()
+
+ggplot(data = profiles, aes(x = created_at, y = followers_count)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+m1 <- lm(followers_count ~ created_at, data = profiles)
+summary(m1)
+
+
+## Ex. 24
+ggplot(data = profiles, aes(x = follows_count, y = followers_count)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+## Ex. 25
+m2 <- lm(followers_count ~ follows_count, data = profiles)
+summary(m2)
+
+m3 <- lm(followers_count ~ created_at + follows_count, data = profiles)
+summary(m3)
+
+m4 <- lm(followers_count ~ created_at + follows_count + posts_count, data = profiles)
+summary(m4)
+
+
+## Ex. 26
+posts_words <- readRDS("data/raw/posts_words.rds")
+
+dictionary_afinn <- lexicon_afinn()
+
+sentiment_afinn <- e23 %>%
+  left_join(dictionary_afinn, by = "word") %>%
+  group_by(uri, text) %>%
+  summarise(sentiment_afinn = sum(value, na.rm = TRUE), .groups = "drop")
+head(sentiment_afinn)  
+
+dictionary_bing <- lexicon_bing()
+
+sentiment_bing <- e23 %>%
+  left_join(dictionary_bing, by = "word") %>%
+  group_by(uri, text) %>%
+  summarise(positive_words = sum(sentiment == "positive", na.rm = TRUE), 
+            negative_words = sum(sentiment == "negative", na.rm = TRUE),
+            sentiment_bing = positive_words - negative_words,
+            .groups = "drop")
+
+dictionary_nrc <- lexicon_nrc_eil() %>%
+  pivot_wider(names_from = AffectDimension, values_from = score)
+
+### from here - error message!!!
+sentiment_nrc <- e23 %>%
+  left_join(dictionary_nrc, by = c("word", "term")) %>%
+  group_by(uri, text) %>%
+  summarise(nrc_fear = sum(fear, na.rm = TRUE),
+            nrc_anger = sum(anger, na.rm = TRUE),
+            nrc_sadness = sum(sadness, na.rm = TRUE),
+            nrc_joy = sum(joy, na.rm = TRUE),
+            .groups = "drop")
+
+## Ex. 27
+
+m5 <- lm(like_count ~ sentiment_afinn, data = sentiment_afinn %>%
+           left_join(e19 %>% select(uri, like_count), by = "uri"))

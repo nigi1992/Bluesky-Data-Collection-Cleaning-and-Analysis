@@ -33,6 +33,24 @@ profiles_get <- readRDS("data/raw/profiles_get.rds")
 profiles_search <- readRDS("data/raw/profiles_search.rds")
 
 
+# Functions
+source("scripts/bs_loop.R")
+source("scripts/bs_clean_embed.R")
+source("scripts/bs_clean_facet.R")
+
+
+# Regex patterns
+## Bsky Team
+# regex to match profile mentions
+mention_bluesky <- "(^|\\s|\\()@([a-zA-Z0-9.-]+)\\b"
+
+# regex to match tags
+tag_bluesky <- "(^|\\s)[#＃]((?!\\ufe0f)[^\\s\\u00AD\\u2060\\u200A\\u200B\\u200C\\u200D\\u20e2]*[^\\d\\s\\p{P}\\u00AD\\u2060\\u200A\\u200B\\u200C\\u200D\\u20e2]+[^\\s\\u00AD\\u2060\\u200A\\u200B\\u200C\\u200D\\u20e2]*)?"
+
+# regex to match URLs
+url_bluesky <- "(^|\\s|\\()((https?://\\S+)|(([a-z][a-z0-9]*(\\.[a-z0-9]+)+)\\S*))"
+
+
 # Ollama Model Download ---------------------------------------------------
 
 # To pull the model, open the Terminal tab in RStudio tab in RStudio (normally found next to the Console tab),
