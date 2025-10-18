@@ -838,6 +838,7 @@ summary(m4)
 ## Ex. 26
 posts_words <- readRDS("data/raw/posts_words.rds")
 
+
 dictionary_afinn <- lexicon_afinn()
 
 sentiment_afinn <- e23 %>%
@@ -845,6 +846,7 @@ sentiment_afinn <- e23 %>%
   group_by(uri, text) %>%
   summarise(sentiment_afinn = sum(value, na.rm = TRUE), .groups = "drop")
 head(sentiment_afinn)  
+
 
 dictionary_bing <- lexicon_bing()
 
@@ -856,12 +858,12 @@ sentiment_bing <- e23 %>%
             sentiment_bing = positive_words - negative_words,
             .groups = "drop")
 
+
 dictionary_nrc <- lexicon_nrc_eil() %>%
   pivot_wider(names_from = AffectDimension, values_from = score)
 
-### from here - error message!!!
 sentiment_nrc <- e23 %>%
-  left_join(dictionary_nrc, by = c("word", "term")) %>%
+  left_join(dictionary_nrc, by = c("word" = "term")) %>%
   group_by(uri, text) %>%
   summarise(nrc_fear = sum(fear, na.rm = TRUE),
             nrc_anger = sum(anger, na.rm = TRUE),
@@ -869,7 +871,21 @@ sentiment_nrc <- e23 %>%
             nrc_joy = sum(joy, na.rm = TRUE),
             .groups = "drop")
 
+
+e26 <- sentiment_afinn |>
+  left_join(sentiment_bing, by = c("uri", "text")) |>
+  left_join(sentiment_nrc, by = c("uri", "text"))
+
+ggplot(data = e26, aes(x= sentiment_afinn, y = sentiment_bing)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE)
+
+
 ## Ex. 27
 
-m5 <- lm(like_count ~ sentiment_afinn, data = sentiment_afinn %>%
-           left_join(e19 %>% select(uri, like_count), by = "uri"))
+e27 <- e23 |>
+  left_join(e26, by = c("uri", "text"))
+
+m5 <- lm(like_count ~ sentiment_afinn, data = e27)
+summary(m5)
+
