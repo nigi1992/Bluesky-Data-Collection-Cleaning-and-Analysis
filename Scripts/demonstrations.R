@@ -1,7 +1,5 @@
 
-## Data Collection
-
-# Day 1 -------------------------------------------------------------------
+# Data Collection -------------------------------------------------------------------
 
 bs_search_actors(
   query, # no wildcards, case insensitive
@@ -521,9 +519,7 @@ e13_alt <- bs_get_record(repo = "at://did:plc:e2alvfh67skz7iov5yevptwt/app.bsky.
 
 ## End of Data Collection Script
 
-# Day 2 -------------------------------------------------------------------
-
-## Data Cleaning
+# Data Cleaning -------------------------------------------------------------------
 
 library(tidyr)
 library(dplyr)
@@ -802,9 +798,7 @@ saveRDS(object = e23, file = "data/raw/posts_words.rds")
 ## End of Cleaning Script
 
 
-# Day 3 -------------------------------------------------------------------
-
-## Data Analysis
+# Data Analysis -------------------------------------------------------------------
 
 profiles <- readRDS("data/raw/profiles.rds")
 
@@ -888,4 +882,96 @@ e27 <- e23 |>
 
 m5 <- lm(like_count ~ sentiment_afinn, data = e27)
 summary(m5)
+
+
+
+## LLMs
+
+chat_ollama(
+  system_prompt = NULL, # system_prompt is a higher level prompt to guide behaviour, affecting every response
+  model = NULL, # specifies model name, e.g., "gemma3:4b"
+  seed = NULL, # seed can make the results more reproducible
+  api_key = NULL, # api_key is needed for non-local models
+)
+
+chat_ollama()$chat() # send message to chosen model
+
+chat <- chat_ollama(model = "gemma3:4b")
+
+chat$chat("Hi!")
+chat$chat("Tell me a joke about data science.")
+
+post <- "These from @handle1.bsky.social are #socool. 👏 A #mustsee on @handle2.com!
+          👉 https://handle2.com/aq7MJJ2..."
+
+chat <- chat_ollama(model = "gemma3:4b",
+                    system_prompt = "Classify the sentiment in this social media post as Positive, Neutral, or Negative.")
+chat$chat(post)
+
+
+# Structured Chat
+
+chat_structured( # for structured output
+  type, # type accepts the structure of the desired ouput
+)
+
+# Create that structure with one of the eight type_*() functions
+type_number(
+  description = NULL, # description works like an additional prompt for data cleaning
+  required = TRUE # required = TRUE forces an answer, and might lead to hallucinations
+)
+
+type_enum(
+  values, # values define coding categories
+  description = NULL,
+  required = TRUE
+)
+
+type_object( # type_object() can group multiple types, leading to multiple variables
+  .description = NULL, 
+  .required = TRUE, 
+  .additional_properties = FALSE 
+)
+
+# example
+sentiment_types <- type_enum(values = c("Positive", "Neutral", "Negative"),
+                             description = "Sentiment classification of the post.")
+
+chat$chat_structured(post, type = sentiment_types)
+
+
+parallel_chat_structured( # to code variables
+  chat, # specifies the object created with a chat_*() function
+  prompts, # prompts is a list of prompts, can just be the variable to be coded, as list
+  # or a prompt and the variable created with the the interpolate() function
+  type,
+  )
+
+# example
+posts <- readRDS("data/raw/posts.rds.rds") |>
+  sample_n(10)
+
+chat <- chat_ollama(model = "gemma3:4b", system_prompt = "Classify the sentiment in this social media post as Positive, Neutral, or Negative.")
+
+sentiment_types <- type_enum(values = c("Positive", "Neutral", "Negative"),
+                             description = "Sentiment classification of the post.")
+
+parallel_chat_structured(
+  chat = chat,
+  prompts = interpolate("Now classifiy the sentiment in this post: {{posts$text}}"),
+  type = sentiment_types
+)
+
+posts <- posts |>
+  mutate(sentiment = parallel_chat_structured(
+    chat = chat,
+    prompts = interpolate("Now classifiy the sentiment in this post: {{posts$text}}"),
+    type = sentiment_types
+  ))
+
+posts |>
+  select(text, sentiment)
+
+
+## Ex. 28
 
